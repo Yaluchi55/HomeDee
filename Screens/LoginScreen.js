@@ -40,11 +40,21 @@ const LoginScreen = ({ navigation }) => {
 
       navigation.reset({ index: 0, routes: [{ name: 'HomeStack' }] });
     } catch (error) {
-      console.error('handleLogin Error:', error?.response?.data || error.message);
-      Alert.alert(
-        'Login Failed',
-        error?.response?.data?.message || 'Invalid phone number or password. Please try again.'
-      );
+      console.error('handleLogin Error:', error?.response?.status, error?.response?.data || error.message);
+      if (error.response) {
+        // Show the real server response so you can see exactly what
+        // shape it's returning, instead of guessing blind.
+        Alert.alert(
+          'Login Failed',
+          `Server responded ${error.response.status}: ${
+            JSON.stringify(error.response.data) || 'no details returned'
+          }`
+        );
+      } else if (error.request) {
+        Alert.alert('Login Failed', 'No response from the server. Check your internet connection or the API URL.');
+      } else {
+        Alert.alert('Login Failed', error.message);
+      }
     } finally {
       setLoading(false);
     }

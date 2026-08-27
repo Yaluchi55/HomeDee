@@ -147,7 +147,13 @@ const App = () => {
           return;
         }
 
-        const response = await axios.get(`${API_BASE_URL}/auth-status`, {
+        // NOTE: every confirmed real endpoint (login, signup, listings)
+        // lives under /api/*. This bare "/auth-status" path is unverified —
+        // if your backend only routes /api/*, this 404s and lands right
+        // here, which matches the /404.html hits seen in your Vercel
+        // dashboard. Check your Vercel Logs tab during a login attempt to
+        // confirm the real path, then fix this line to match.
+        const response = await axios.get(`${API_BASE_URL}/api/auth-status`, {
           headers: { Authorization: `Bearer ${token}` },
         });
 
@@ -158,11 +164,19 @@ const App = () => {
           setIsAuthenticated(false);
         }
       } catch (error) {
-        console.error('Authentication Error:', error);
+        console.error('Authentication Error:', error?.response?.status, error?.response?.data || error.message);
         setIsAuthenticated(false);
-        // Only alert on real network/server errors, not "no token found"
+        // Only alert on real network/server errors, not "no token found".
+        // Shows the actual status/response so you're not stuck guessing.
         if (error.response) {
-          Alert.alert('Login Failed', 'An error occurred during login. Please try again.');
+          Alert.alert(
+            'Login Failed',
+            `Server responded ${error.response.status}: ${
+              JSON.stringify(error.response.data) || 'no details returned'
+            }`
+          );
+        } else if (error.request) {
+          Alert.alert('Login Failed', 'No response from server — check your network or the API URL.');
         }
       } finally {
         setCheckingAuth(false);
